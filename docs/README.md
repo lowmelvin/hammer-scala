@@ -9,7 +9,7 @@ To include Hammer in your project, add the following to your dependencies:
 libraryDependencies += "com.melvinlow" %% "hammer" % <version>
 ```
 
-## TD;LR
+## Quickstart
 
 ```scala mdoc:invisible
 import java.time.Instant
