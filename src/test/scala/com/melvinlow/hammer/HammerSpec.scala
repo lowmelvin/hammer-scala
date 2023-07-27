@@ -1,6 +1,5 @@
-package com.melvinlow.formify
+package com.melvinlow.hammer
 
-import com.melvinlow.hammer.Hammer
 import com.melvinlow.hammer.instances.auto.given
 import com.melvinlow.hammer.syntax.all.*
 
