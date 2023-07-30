@@ -48,4 +48,52 @@ object HammerSpec extends weaver.FunSuite {
 
     expect(F(1).hammerTo[G] == G(Some(1)))
   }
+
+  test("should hammer a field with a custom extractor") {
+    final case class A(x: Int, y: Int)
+    final case class B(x: Int, y: Int)
+
+    given Extractor[A, "x", Int] = (_: A) => 10
+
+    expect(A(1, 2).hammerTo[B] == B(10, 2))
+  }
+
+  test("should hammer a missing field with a custom extractor") {
+    final case class A(x: Int, y: Int)
+    final case class B(x: Int, y: Int, z: Int)
+
+    given Extractor[A, "z", Int] = (_: A) => 10
+
+    expect(A(1, 2).hammerTo[B] == B(1, 2, 10))
+  }
+
+  test("should hammer with all directly specified fields") {
+    final case class A(x: Int)
+    final case class B(x: Int)
+
+    val b1 = A(0).hammerWith[B, Tuple1["x"]](Tuple(1))
+    val b2 = A(0).hammerWith[B, Tuple1["x"]](Tuple(2))
+    val b3 = A(0).hammerTo[B]
+    val b4 = A(0).hammerWith[B, EmptyTuple](EmptyTuple)
+
+    expect.all(
+      b1 == B(1),
+      b2 == B(2),
+      b3 == B(0),
+      b4 == B(0)
+    )
+  }
+
+  test("should hammer with partially specified fields") {
+    final case class A(x: Int, y: String)
+    final case class B(w: String, y: String, z: Int)
+
+    val b1 = A(0, "y").hammerWith[B, ("w", "y", "z")](("w", "x", 1))
+    val b2 = A(0, "y").hammerWith[B, ("w", "z")](("w", 2))
+
+    expect.all(
+      b1 == B("w", "x", 1),
+      b2 == B("w", "y", 2)
+    )
+  }
 }

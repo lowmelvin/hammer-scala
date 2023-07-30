@@ -133,8 +133,8 @@ Cat("Peanuts", "Meow").hammerTo[Dog]
 //       /* missing */summon[deriving.Mirror.ProductOf[("Meow" : String)]], ???)
 // 
 // But Failed to synthesize an instance of type deriving.Mirror.ProductOf[("Meow" : String)]: class String is not a generic product because it is not a case class.
-// entity.hammerTo[Account]
-//        ^
+// Boxed(EmailAddress("test@example.com")).hammerTo[Unboxed]
+//       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ```
 
 ## Usage
@@ -145,6 +145,59 @@ Simply include the correct imports and call the `hammerTo` method:
 import com.melvinlow.hammer.instances.auto.given
 import com.melvinlow.hammer.syntax.all.*
 ```
+
+## Advanced Usage
+
+Hammer includes patching functionality that allows you to override
+specific fields. To do this, call the `hammerWith` extension method:
+
+```scala
+case class HumanEntity(name: String, age: Int)
+case class Human(name: String, age: Int)
+
+// Override the name field
+HumanEntity("Hami", 18).hammerWith[Human, Tuple1["name"]](Tuple1("Arno"))
+// res6: Human = Human(name = "Arno", age = 18)
+```
+
+The same method can also be used to convert a case class to a richer case class
+by providing the values of the missing fields:
+
+```scala
+case class Engineer(name: String)
+case class EngineerEntity(name: String, createdAt: Instant, updatedAt: Instant)
+
+Engineer("Lynn").hammerWith[EngineerEntity, ("createdAt", "updatedAt")] {
+  (Instant.now, Instant.now)
+}
+// res7: EngineerEntity = EngineerEntity(
+//   name = "Lynn",
+//   createdAt = 2023-07-30T16:34:04.057328Z,
+//   updatedAt = 2023-07-30T16:34:04.057329Z
+// )
+```
+
+As shown, you are required to provide the desired output type along with
+the field names and values, each as a `Tuple`. It goes without saying
+that the tuples should be ordered in a paired manner.
+The method signature looks something like this:
+
+```scala
+def hammerWith[OutputType, Labels <: Tuple](values: Tuple)
+```
+
+For comparison, these two usages are equivalent:
+
+```scala
+octagon.hammerTo[Hexagon]
+// res8: Hexagon = Hexagon(b = 2, c = 3, d = 4, e = 5, f = 6, g = 7, h = 8)
+
+octagon.hammerWith[Hexagon, EmptyTuple](EmptyTuple)
+// res9: Hexagon = Hexagon(b = 2, c = 3, d = 4, e = 5, f = 6, g = 7, h = 8)
+```
+
+Finally, note that only top level patching is supported--it is not possible
+to inject a value somewhere deep into a nested case class.
 
 ## Typeclasses and Extensions
 
@@ -168,7 +221,7 @@ case class F(x: Int)
 case class G(x: Option[Int])
 
 F(1).hammerTo[G]
-// res8: G = G(x = Some(value = 1))
+// res11: G = G(x = Some(value = 1))
 ```
 
 Underneath the hood, Hammer simply looks for a matching field name

@@ -35,7 +35,7 @@ lazy val root = (project in file("."))
       "-feature",
       "-unchecked",
       "-deprecation",
-      "-Wunused:all",
+      "-Wunused:imports",
       "-Werror",
       "-Wvalue-discard",
       "-no-indent",
