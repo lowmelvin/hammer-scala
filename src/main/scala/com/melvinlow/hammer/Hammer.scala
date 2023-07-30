@@ -34,7 +34,10 @@ object Hammer {
   inline private def makeExtractors[S: Mirror.ProductOf, Labels <: Tuple, Outputs <: Tuple]
     : List[Extractor[S, ?, ?]] =
     inline erasedValue[(Labels, Outputs)] match {
-      case _: (l *: tailL, o *: tailO) => makeExtractor[S, l, o] :: makeExtractors[S, tailL, tailO]
+      case _: (l *: tailL, o *: tailO) => summonFrom {
+          case e: Extractor[S, l, o] => e :: makeExtractors[S, tailL, tailO]
+          case _                     => makeExtractor[S, l, o] :: makeExtractors[S, tailL, tailO]
+        }
       case _: (EmptyTuple, EmptyTuple) => Nil
       case _                           => error("Could not make extractors.")
     }
