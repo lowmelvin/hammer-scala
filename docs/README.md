@@ -43,7 +43,7 @@ entity.hammerTo[Account]
 
 In many scenarios, we create case classes that are simpler versions of others. For example, you might have a comprehensive model representation for your database and a leaner version for your API consumers.
 
-Manually constructing these leaner versions can be tedious:
+Manually constructing these leaner versions can be tedious and error-prone:
 
 ```scala mdoc
 case class Octagon(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int, g: Int, h: Int)
@@ -69,6 +69,19 @@ case class B(z: String, x: String)
 A("x", "y", "z").hammerTo[B]
 ```
 
+And also nested fields:
+
+```scala mdoc
+case class CompanyEntity(name: String, createdAt: Instant)
+case class PersonEntity(name: String, company: CompanyEntity, createdAt: Instant)
+
+case class Company(name: String)
+case class Person(name: String, company: Company)
+
+PersonEntity("John", CompanyEntity("Scala", Instant.now), Instant.now)
+  .hammerTo[Person]
+```
+
 It can also convert types, such as for auto-unboxing wrapper types:
 
 ```scala mdoc
@@ -85,6 +98,15 @@ case class Boxed(email: EmailAddress)
 case class Unboxed(email: String)
 
 Boxed(EmailAddress("test@example.com")).hammerTo[Unboxed]
+```
+
+Importantly, it will error at compile time if conversion is not possible:
+
+```scala mdoc:fail
+case class Cat(name: String, voice: "Meow")
+case class Dog(name: String, voice: "Bark")
+
+Cat("Peanuts", "Meow").hammerTo[Dog]
 ```
 
 ## Usage

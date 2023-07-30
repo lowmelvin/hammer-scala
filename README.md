@@ -45,7 +45,7 @@ entity.hammerTo[Account]
 
 In many scenarios, we create case classes that are simpler versions of others. For example, you might have a comprehensive model representation for your database and a leaner version for your API consumers.
 
-Manually constructing these leaner versions can be tedious:
+Manually constructing these leaner versions can be tedious and error-prone:
 
 ```scala
 case class Octagon(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int, g: Int, h: Int)
@@ -84,6 +84,20 @@ A("x", "y", "z").hammerTo[B]
 // res2: B = B(z = "z", x = "x")
 ```
 
+And also nested fields:
+
+```scala
+case class CompanyEntity(name: String, createdAt: Instant)
+case class PersonEntity(name: String, company: CompanyEntity, createdAt: Instant)
+
+case class Company(name: String)
+case class Person(name: String, company: Company)
+
+PersonEntity("John", CompanyEntity("Scala", Instant.now), Instant.now)
+  .hammerTo[Person]
+// res3: Person = Person(name = "John", company = Company(name = "Scala"))
+```
+
 It can also convert types, such as for auto-unboxing wrapper types:
 
 ```scala
@@ -100,7 +114,27 @@ case class Boxed(email: EmailAddress)
 case class Unboxed(email: String)
 
 Boxed(EmailAddress("test@example.com")).hammerTo[Unboxed]
-// res3: Unboxed = Unboxed(email = "test@example.com")
+// res4: Unboxed = Unboxed(email = "test@example.com")
+```
+
+Importantly, it will error at compile time if conversion is not possible:
+
+```scala
+case class Cat(name: String, voice: "Meow")
+case class Dog(name: String, voice: "Bark")
+
+Cat("Peanuts", "Meow").hammerTo[Dog]
+// error:
+// No given instance of type com.melvinlow.hammer.Hammer[("Meow" : String), ("Bark" : String)] was found.
+// I found:
+// 
+//     com.melvinlow.hammer.instances.auto.given_Hammer_I_O[("Meow" : String),
+//       ("Bark" : String)](
+//       /* missing */summon[deriving.Mirror.ProductOf[("Meow" : String)]], ???)
+// 
+// But Failed to synthesize an instance of type deriving.Mirror.ProductOf[("Meow" : String)]: class String is not a generic product because it is not a case class.
+// entity.hammerTo[Account]
+//        ^
 ```
 
 ## Usage
@@ -134,7 +168,7 @@ case class F(x: Int)
 case class G(x: Option[Int])
 
 F(1).hammerTo[G]
-// res6: G = G(x = Some(value = 1))
+// res8: G = G(x = Some(value = 1))
 ```
 
 Underneath the hood, Hammer simply looks for a matching field name
