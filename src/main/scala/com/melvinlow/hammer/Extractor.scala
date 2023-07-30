@@ -1,7 +1,7 @@
 package com.melvinlow.hammer
 
 trait Extractor[S, L, O] {
-  def extract[L](source: S): O
+  def extract(source: S): O
 }
 
 object Extractor {
