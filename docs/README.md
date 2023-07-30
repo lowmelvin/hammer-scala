@@ -113,10 +113,55 @@ Cat("Peanuts", "Meow").hammerTo[Dog]
 
 Simply include the correct imports and call the `hammerTo` method:
 
-```scala mdoc:reset
+```scala
 import com.melvinlow.hammer.instances.auto.given
 import com.melvinlow.hammer.syntax.all.*
 ```
+
+## Advanced Usage
+
+Hammer includes patching functionality that allows you to override
+specific fields. To do this, call the `hammerWith` extension method:
+
+```scala mdoc
+case class HumanEntity(name: String, age: Int)
+case class Human(name: String, age: Int)
+
+// Override the name field
+HumanEntity("Hami", 18).hammerWith[Human, Tuple1["name"]](Tuple1("Arno"))
+```
+
+The same method can also be used to convert a case class to a richer case class
+by providing the values of the missing fields:
+
+```scala mdoc
+case class Engineer(name: String)
+case class EngineerEntity(name: String, createdAt: Instant, updatedAt: Instant)
+
+Engineer("Lynn").hammerWith[EngineerEntity, ("createdAt", "updatedAt")] {
+  (Instant.now, Instant.now)
+}
+```
+
+As shown, you are required to provide the desired output type along with
+the field names and values, each as a `Tuple`. It goes without saying
+that the tuples should be ordered in a paired manner.
+The method signature looks something like this:
+
+```scala
+def hammerWith[OutputType, Labels <: Tuple](values: Tuple)
+```
+
+For comparison, these two usages are equivalent:
+
+```scala mdoc
+octagon.hammerTo[Hexagon]
+
+octagon.hammerWith[Hexagon, EmptyTuple](EmptyTuple)
+```
+
+Finally, note that only top level patching is supported--it is not possible
+to inject a value somewhere deep into a nested case class.
 
 ## Typeclasses and Extensions
 

@@ -17,7 +17,7 @@ object Hammer {
   inline def hammerWith[I: Mirror.ProductOf, O: Mirror.ProductOf, L <: Tuple](source: I)
     : AugmentedHammer[I, O, L] = new AugmentedHammer[I, O, L](source)
 
-  private[hammer] final class AugmentedHammer[I, O, L <: Tuple](val source: I) extends AnyVal {
+  final class AugmentedHammer[I, O, L <: Tuple](val source: I) extends AnyVal {
     inline private def helper[Labels, Values <: Tuple](values: Values)(using
       Mirror.ProductOf[I],
       Mirror.ProductOf[O]
