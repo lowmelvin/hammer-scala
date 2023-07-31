@@ -10,7 +10,7 @@ object instances {
       inline def hammer(input: I): I = input
     }
 
-    inline given [I: Mirror.ProductOf, O: Mirror.ProductOf]: Hammer[I, O] = makeProductHammer
+    inline given [I: Mirror.ProductOf, O: Mirror.ProductOf]: Hammer[I, O] = makeProductHammerMacro()
   }
 
   object semiauto {

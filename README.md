@@ -124,7 +124,7 @@ case class Cat(name: String, voice: "Meow")
 case class Dog(name: String, voice: "Bark")
 
 Cat("Peanuts", "Meow").hammerTo[Dog]
-// error:
+// error: 
 // No given instance of type com.melvinlow.hammer.Hammer[("Meow" : String), ("Bark" : String)] was found.
 // I found:
 // 
@@ -133,8 +133,6 @@ Cat("Peanuts", "Meow").hammerTo[Dog]
 //       /* missing */summon[deriving.Mirror.ProductOf[("Meow" : String)]], ???)
 // 
 // But Failed to synthesize an instance of type deriving.Mirror.ProductOf[("Meow" : String)]: class String is not a generic product because it is not a case class.
-// Boxed(EmailAddress("test@example.com")).hammerTo[Unboxed]
-//       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ```
 
 ## Usage
@@ -156,7 +154,7 @@ case class HumanEntity(name: String, age: Int)
 case class Human(name: String, age: Int)
 
 // Override the name field
-HumanEntity("Hami", 18).hammerWith[Human, Tuple1["name"]](Tuple1("Arno"))
+HumanEntity("Hami", 18).hammerWith[Human](Patch["name"]("Arno"))
 // res6: Human = Human(name = "Arno", age = 18)
 ```
 
@@ -167,24 +165,20 @@ by providing the values of the missing fields:
 case class Engineer(name: String)
 case class EngineerEntity(name: String, createdAt: Instant, updatedAt: Instant)
 
-Engineer("Lynn").hammerWith[EngineerEntity, ("createdAt", "updatedAt")] {
-  (Instant.now, Instant.now)
-}
+Engineer("Lynn").hammerWith[EngineerEntity](
+  Patch["createdAt"](Instant.now),
+  Patch["updatedAt"](Instant.now)
+)
 // res7: EngineerEntity = EngineerEntity(
 //   name = "Lynn",
-//   createdAt = 2023-07-30T16:34:04.057328Z,
-//   updatedAt = 2023-07-30T16:34:04.057329Z
+//   createdAt = 2023-07-31T06:14:57.426081Z,
+//   updatedAt = 2023-07-31T06:14:57.426083Z
 // )
 ```
 
-As shown, you are required to provide the desired output type along with
-the field names and values, each as a `Tuple`. It goes without saying
-that the tuples should be ordered in a paired manner.
-The method signature looks something like this:
-
-```scala
-def hammerWith[OutputType, Labels <: Tuple](values: Tuple)
-```
+As shown, you are required to provide the desired output type (can be inferred) along with a
+variable number of `Patch` objects that each contain the field name and value to inject.
+The `Patch` objects can be specified in any order.
 
 For comparison, these two usages are equivalent:
 
@@ -192,7 +186,7 @@ For comparison, these two usages are equivalent:
 octagon.hammerTo[Hexagon]
 // res8: Hexagon = Hexagon(b = 2, c = 3, d = 4, e = 5, f = 6, g = 7, h = 8)
 
-octagon.hammerWith[Hexagon, EmptyTuple](EmptyTuple)
+octagon.hammerWith[Hexagon]()
 // res9: Hexagon = Hexagon(b = 2, c = 3, d = 4, e = 5, f = 6, g = 7, h = 8)
 ```
 

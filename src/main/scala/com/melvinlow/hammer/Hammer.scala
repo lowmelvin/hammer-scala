@@ -4,6 +4,7 @@ import scala.compiletime.*
 import scala.compiletime.ops.any.*
 import scala.compiletime.ops.int.{S => Succ}
 import scala.deriving.*
+import scala.quoted.*
 
 trait Hammer[I, O] {
   def hammer(input: I): O
@@ -14,25 +15,36 @@ object Hammer {
 
   inline def hammerTo[I, O](input: I)(using hammer: Hammer[I, O]): O = hammer.hammer(input)
 
-  inline def hammerWith[I: Mirror.ProductOf, O: Mirror.ProductOf, L <: Tuple](source: I)
-    : AugmentedHammer[I, O, L] = new AugmentedHammer[I, O, L](source)
+  inline def hammerWith[I: Mirror.ProductOf, O: Mirror.ProductOf](
+    source: I,
+    inline args: Patch[?, ?]*
+  ): O =
+    makeProductHammerMacro(args*).hammer(source)
 
-  final class AugmentedHammer[I, O, L <: Tuple](val source: I) extends AnyVal {
-    inline private def helper[Labels, Values <: Tuple](values: Values)(using
-      Mirror.ProductOf[I],
-      Mirror.ProductOf[O]
-    ): O = inline erasedValue[(Labels, Values)] match {
-      case _: (EmptyTuple, EmptyTuple) => summonOrMakeProductHammer[I, O].hammer(source)
-      case _: (l *: lTail, v *: _) =>
-        given e: Extractor[I, l, v] = (_: I) => values.productElement(0).asInstanceOf[v]
-        helper[lTail, Tuple.Drop[Values, 1]](values.drop(1))
-      case _ => error("Mismatched labels and values.")
+  inline def makeProductHammerMacro[I: Mirror.ProductOf, O: Mirror.ProductOf](
+    inline patches: Patch[?, ?]*
+  ): Hammer[I, O] =
+    ${ makeProductHammerMacroImpl('patches) }
+
+  private def makeProductHammerMacroImpl[I: Type, O: Type](
+    patchExprs: Expr[Seq[Patch[?, ?]]]
+  )(using Quotes): Expr[Hammer[I, O]] = {
+    val mI: Expr[Mirror.ProductOf[I]] = Expr.summon[Mirror.ProductOf[I]].get
+    val mO: Expr[Mirror.ProductOf[O]] = Expr.summon[Mirror.ProductOf[O]].get
+
+    patchExprs match {
+      case Varargs(patches) =>
+        patches match {
+          case Nil => '{ summonOrMakeProductHammer[I, O](using $mI, $mO) }
+
+          case '{ $arg: Patch[k, v] } :: tail => '{
+              given extractor: Extractor[I, k, v] = (_: I) => $arg.underlying
+              ${ makeProductHammerMacroImpl[I, O](Varargs(tail)) }
+            }
+        }
+
+      case _ => '{ summonOrMakeProductHammer[I, O](using $mI, $mO) }
     }
-
-    inline def apply[Values <: Tuple](values: Values)(using
-      Mirror.ProductOf[I],
-      Mirror.ProductOf[O]
-    ): O = helper[L, Values](values)
   }
 
   inline private def summonOrMakeProductHammer[I: Mirror.ProductOf, O: Mirror.ProductOf]
@@ -76,7 +88,7 @@ object Hammer {
       case _                           => error("Could not make extractors.")
     }
 
-  inline def makeProductHammer[S, O](using
+  inline private def makeProductHammer[S, O](using
     ms: Mirror.ProductOf[S],
     mo: Mirror.ProductOf[O]
   ): Hammer[S, O] =

@@ -71,10 +71,10 @@ object HammerSpec extends weaver.FunSuite {
     final case class A(x: Int)
     final case class B(x: Int)
 
-    val b1 = A(0).hammerWith[B, Tuple1["x"]](Tuple(1))
-    val b2 = A(0).hammerWith[B, Tuple1["x"]](Tuple(2))
+    val b1 = A(0).hammerWith[B](Patch["x"](1))
+    val b2 = A(0).hammerWith[B](Patch["x"](2))
     val b3 = A(0).hammerTo[B]
-    val b4 = A(0).hammerWith[B, EmptyTuple](EmptyTuple)
+    val b4 = A(0).hammerWith[B]()
 
     expect.all(
       b1 == B(1),
@@ -88,8 +88,8 @@ object HammerSpec extends weaver.FunSuite {
     final case class A(x: Int, y: String)
     final case class B(w: String, y: String, z: Int)
 
-    val b1 = A(0, "y").hammerWith[B, ("w", "y", "z")](("w", "x", 1))
-    val b2 = A(0, "y").hammerWith[B, ("w", "z")](("w", 2))
+    val b1 = A(0, "y").hammerWith[B](Patch["w"]("w"), Patch["z"](1), Patch["y"]("x"))
+    val b2 = A(0, "y").hammerWith[B](Patch["w"]("w"), Patch["z"](2))
 
     expect.all(
       b1 == B("w", "x", 1),

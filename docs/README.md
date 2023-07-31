@@ -128,7 +128,7 @@ case class HumanEntity(name: String, age: Int)
 case class Human(name: String, age: Int)
 
 // Override the name field
-HumanEntity("Hami", 18).hammerWith[Human, Tuple1["name"]](Tuple1("Arno"))
+HumanEntity("Hami", 18).hammerWith[Human](Patch["name"]("Arno"))
 ```
 
 The same method can also be used to convert a case class to a richer case class
@@ -138,26 +138,22 @@ by providing the values of the missing fields:
 case class Engineer(name: String)
 case class EngineerEntity(name: String, createdAt: Instant, updatedAt: Instant)
 
-Engineer("Lynn").hammerWith[EngineerEntity, ("createdAt", "updatedAt")] {
-  (Instant.now, Instant.now)
-}
+Engineer("Lynn").hammerWith[EngineerEntity](
+  Patch["createdAt"](Instant.now),
+  Patch["updatedAt"](Instant.now)
+)
 ```
 
-As shown, you are required to provide the desired output type along with
-the field names and values, each as a `Tuple`. It goes without saying
-that the tuples should be ordered in a paired manner.
-The method signature looks something like this:
-
-```scala
-def hammerWith[OutputType, Labels <: Tuple](values: Tuple)
-```
+As shown, you are required to provide the desired output type (can be inferred) along with a
+variable number of `Patch` objects that each contain the field name and value to inject.
+The `Patch` objects can be specified in any order.
 
 For comparison, these two usages are equivalent:
 
 ```scala mdoc
 octagon.hammerTo[Hexagon]
 
-octagon.hammerWith[Hexagon, EmptyTuple](EmptyTuple)
+octagon.hammerWith[Hexagon]()
 ```
 
 Finally, note that only top level patching is supported--it is not possible
