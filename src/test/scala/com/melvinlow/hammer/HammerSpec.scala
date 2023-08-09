@@ -96,4 +96,13 @@ object HammerSpec extends weaver.FunSuite {
       b2 == B("w", "y", 2)
     )
   }
+
+  test("should override a custom extractor when using hammerWith") {
+    final case class A(x: Int, y: Int)
+    final case class B(x: Int, y: Int)
+
+    given Extractor[A, "x", Int] = (_: A) => 10
+
+    expect(A(1, 2).hammerWith[B](Patch["x"](11)) == B(11, 2))
+  }
 }
