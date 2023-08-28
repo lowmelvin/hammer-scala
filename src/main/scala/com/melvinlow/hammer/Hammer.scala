@@ -21,31 +21,30 @@ object Hammer {
   ): O =
     makeProductHammerMacro(args*).hammer(source)
 
-  inline def makeProductHammerMacro[I: Mirror.ProductOf, O: Mirror.ProductOf](
+  inline def makeProductHammerMacro[I, O](
     inline patches: Patch[?, ?]*
-  ): Hammer[I, O] =
-    ${ makeProductHammerMacroImpl('patches) }
+  )(using mi: Mirror.ProductOf[I], mo: Mirror.ProductOf[O]): Hammer[I, O] =
+    ${ makeProductHammerMacroImpl('patches)('mi, 'mo) }
 
   private def makeProductHammerMacroImpl[I: Type, O: Type](
     patchExprs: Expr[Seq[Patch[?, ?]]]
-  )(using Quotes): Expr[Hammer[I, O]] = {
-    val mI: Expr[Mirror.ProductOf[I]] = Expr.summon[Mirror.ProductOf[I]].get
-    val mO: Expr[Mirror.ProductOf[O]] = Expr.summon[Mirror.ProductOf[O]].get
-
+  )(
+    mi: Expr[Mirror.ProductOf[I]],
+    mo: Expr[Mirror.ProductOf[O]]
+  )(using Quotes): Expr[Hammer[I, O]] =
     patchExprs match {
       case Varargs(patches) =>
         patches match {
-          case Nil => '{ summonOrMakeProductHammer[I, O](using $mI, $mO) }
+          case Nil => '{ summonOrMakeProductHammer[I, O](using $mi, $mo) }
 
           case '{ $arg: Patch[k, v] } :: tail => '{
               given extractor: Extractor[I, k, v] = (_: I) => $arg.underlying
-              ${ makeProductHammerMacroImpl[I, O](Varargs(tail)) }
+              ${ makeProductHammerMacroImpl[I, O](Varargs(tail))(mi, mo) }
             }
         }
 
-      case _ => '{ summonOrMakeProductHammer[I, O](using $mI, $mO) }
+      case _ => '{ summonOrMakeProductHammer[I, O](using $mi, $mo) }
     }
-  }
 
   inline private def summonOrMakeProductHammer[I: Mirror.ProductOf, O: Mirror.ProductOf]
     : Hammer[I, O] =
