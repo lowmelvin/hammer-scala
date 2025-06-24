@@ -1,5 +1,5 @@
 val CatsVersion       = "2.12.0"
-val WeaverCatsVersion = "0.8.4"
+val WeaverCatsVersion = "0.9.1"
 
 ThisBuild / organization     := "com.melvinlow"
 ThisBuild / organizationName := "Melvin Low"
@@ -26,8 +26,8 @@ lazy val root = (project in file("."))
     name        := "hammer",
     description := "Scala library to hammer one ADT to another.",
     libraryDependencies ++= Seq(
-      "org.typelevel"       %% "cats-core"   % CatsVersion       % Test,
-      "com.disneystreaming" %% "weaver-cats" % WeaverCatsVersion % Test
+      "org.typelevel" %% "cats-core"   % CatsVersion       % Test,
+      "org.typelevel" %% "weaver-cats" % WeaverCatsVersion % Test
     ),
     scalacOptions ++= Seq(
       "-encoding",
